@@ -1,9 +1,11 @@
 #!/bin/sh
 
 myname=$(basename $0)
-configbase="${WTFOS_PACKAGE_CONFIG_BASE:-/opt/etc/pkg-settings/}"
+configbase="${WTFOS_PACKAGE_CONFIG_BASE:-/opt/etc/package-config/}"
 
-#set -x
+if [ ! -z $DEBUG ]; then
+    set -x
+fi
 
 sub_help(){
     echo "Usage: $myname <subcommand> [options]\n"
@@ -31,6 +33,14 @@ init_schema(){
     fi
 
     if [ "$#" -ne 1 ]; then
+        ##lets keep things sane
+        echo "$2" | grep -Eq  "^[a-zA-Z0-9\\_]*$" 
+        result=$?
+        if [ $result -ne 0 ]; then
+            echo "key may only contain alphanumeric characters and _"
+            exit 1
+        fi
+
         settingkey=$(echo -n "$2" | jq -R -s '.')
         settingtype=$(jq -r ".settings.$settingkey.widget" $schemafile)
          if [ -z "$settingtype" ] || [ "$settingtype" = "null" ]; then 
@@ -48,7 +58,7 @@ sub_get(){
         exit 1
     fi
     init_schema $1
-    key=$(echo -n $2 | jq -R -s '.')
+    key=$(echo -n "$2" | jq -R -s '.')
     if [ -f $configfile.new ]; then
         configfile=$configfile.new
     fi
@@ -145,7 +155,7 @@ sub_set(){
         exit 1
     fi
 
-    key=$(echo -n $2 | jq -R -s '.')
+    key=$(echo -n "$2" | jq -R -s '.')
 
     if [ "$settingtype" = "text" ] || [ "$settingtype" = "select" ]; then
         value=$(echo -n $3 | jq -R -s '.')
