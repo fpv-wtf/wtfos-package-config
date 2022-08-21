@@ -41,7 +41,7 @@ Install your [schema.json](./testschema.json) and default [config.json](./testco
 
 Check out the linked files above for examples, supported types and constraints. In order for a field to be settable it *must* be defined with a certain type in your schema.json. All constaints are optional and will be ignored if not persent.
 
-script authors may rely on `SOME_SETTING=$(package-config get $PACKAGE_NAME $SETTING_GET)` to convienently retreive settings.
+script authors may rely on `SOME_SETTING=$(package-config getsaved $PACKAGE_NAME $SETTING_GET)` to convienently retreive (applied) settings.
 
 For more details see [this wtfos-configurator issue](https://github.com/fpv-wtf/wtfos-configurator/issues/7).
 

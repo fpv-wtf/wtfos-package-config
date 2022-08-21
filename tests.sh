@@ -1,13 +1,13 @@
 #!/bin/bash
 
 set -e
-#set -x
+if [ ! -z $DEBUG ]; then
+    set -x
+fi
 
 #use ./ as config store 
 export WTFOS_PACKAGE_CONFIG_BASE=./
 
-#make get return unapplied values
-export UNAPPLIED=true
 
 mkdir -p tmp
 cp testconfig.json tmp/config.json

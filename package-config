@@ -7,11 +7,14 @@ if [ ! -z $DEBUG ]; then
     set -x
 fi
 
+set -e
+
 sub_help(){
     echo "Usage: $myname <subcommand> [options]\n"
     echo "Subcommands:"
     echo "    get <package>                  show all keys for package"
     echo "    get <package> <key>            get value for key in package"
+    echo "    getsaved <package> <key>       get on disk (non-pending) value"
     echo "    set <package> <key> <value>    set value for key in package"
     echo "    reset <package>                forget unapplied changes"
     echo "    apply <package>                restart the package dinit unit if it exists"
@@ -52,7 +55,12 @@ init_schema(){
 
 
 }
-  
+
+sub_getsaved() {
+    showsavedonly=true
+    sub_get "$@"
+}
+
 sub_get(){
     if [ "$#" -lt 1 ]; then
         echo "must specify config package"
@@ -60,7 +68,7 @@ sub_get(){
     fi
     init_schema $1
     key=$(echo -n "$2" | jq -R -s '.')
-    if [ ! -z $UNAPPLIED ] && [ -f "$newconfigfile" ]; then
+    if [ -z $showsavedonly ] && [ -f "$newconfigfile" ]; then
         configfile="$newconfigfile"
     fi
     jq -r ".$key" $configfile
@@ -207,6 +215,7 @@ sub_apply(){
         echo "resulting config file is not valid json, please check your input"
         exit 1
     fi
+    echo "changes applied"
     dinitctl restart $1 || true
 }
 
