@@ -10,7 +10,8 @@ sub_help(){
     echo "Subcommands:"
     echo "    get <package>                  show all keys for package"
     echo "    get <package> <key>            get value for key in package"
-    echo "    set <package> <key> <value>    set string value for key in package"
+    echo "    set <package> <key> <value>    set value for key in package"
+    echo "    reset <package>                forget unapplied changes"
     echo "    apply <package>                restart the package dinit unit if it exists"
     echo ""
 }
@@ -162,6 +163,10 @@ sub_set(){
 }
 
 sub_reset() {
+    if [ "$#" -ne 1 ]; then
+        echo "must specify package"
+        exit 1
+    fi
     init_schema "$1"
     if [ ! -f $configfile.new ]; then
         echo "no changes to reset"
