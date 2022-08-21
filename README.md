@@ -14,7 +14,7 @@ Subcommands:
     apply <package>                restart the package dinit unit if it exists    
 ```
 
-### Show a current setting value
+### Show a current setting value./package-config get
 ```
 package-config get msp-osd debug
 ```
@@ -46,7 +46,7 @@ For more details see [this wtfos-configurator issue](https://github.com/fpv-wtf/
 ### Bash script authors
 To load an individual settings from your config file you can use:
 ```
-SOME_SETTING=$(package-config getsaved $PACKAGE_NAME $SETTING_GET)
+SOME_SETTING=$(package-config getsaved $PACKAGE_NAME $SETTING_NAME)
 ``` 
 To load all settings in your config file into local variables you can use:
 ```
