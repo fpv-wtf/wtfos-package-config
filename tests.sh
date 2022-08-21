@@ -175,6 +175,13 @@ fi
 #    exit 1
 #fi
 
+echo "checking bash variable loading"
+eval $(./package-config get tmp)
+if [[ "$key_text" != "me string" ]] || [[ "$key_checkbox" != "false" ]] || [[ "$key_range" != "3" ]]  || [[ "$key_select" != "key_2" ]]; then
+    echo "could not validate bash variable loading"
+    exit 1
+fi
+
 ./package-config apply tmp
 
 if [ "$(./package-config apply tmp | grep -E "restart service_[12]" | wc -l)" = "2" ]; then
@@ -186,6 +193,5 @@ if [ "$(cat tmp/config.json | shasum -)" != "$(cat /tmp/package-config/tmp/confi
     echo "new config did not apply correctly"
     exit 1
 fi
-
 
 echo all passed

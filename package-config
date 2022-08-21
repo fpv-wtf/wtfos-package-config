@@ -74,10 +74,20 @@ sub_get(){
     fi
     init_schema $1
     key=$(echo -n "$2" | jq -R -s '.')
+    
+
     if [ -z $showsavedonly ] && [ -f "$newconfigfile" ]; then
         configfile="$newconfigfile"
     fi
-    jq -r ".$key" $configfile
+
+    if [ "$#" -eq 1 ]; then
+        #dump all settings
+        jq -r 'to_entries|map("\(.key)=" + @sh "\(.value|tostring)")|.[]' $configfile
+        
+    else
+        #get specific settings
+        jq -r ".$key" $configfile
+    fi
 }
 
 
