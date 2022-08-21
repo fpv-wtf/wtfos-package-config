@@ -3,14 +3,17 @@
 set -e
 #set -x
 
+#use ./ as config store 
 export WTFOS_PACKAGE_CONFIG_BASE=./
+
+#make get return unapplied values
+export UNAPPLIED=true
 
 mkdir -p tmp
 cp testconfig.json tmp/config.json
 cp testschema.json tmp/schema.json
 
-rm tmp/config.json.new || true
-rm tmp/config.json.keep || true
+rm -rf /tmp/package-config/tmp/ || true
 
 echo "#checking default text value"
 
@@ -155,7 +158,7 @@ fi
 
 echo "checking apply command updates config.json"
 
-cp tmp/config.json.new tmp/config.json.keep
+cp /tmp/package-config/tmp/config.json.new /tmp/package-config/tmp/config.json.new.keep
 
 echo "checking key validation"
 
@@ -173,7 +176,7 @@ fi
 
 
 ./package-config apply tmp
-if [ "$(cat tmp/config.json | shasum -)" != "$(cat tmp/config.json.keep | shasum -)" ]; then 
+if [ "$(cat tmp/config.json | shasum -)" != "$(cat /tmp/package-config/tmp/config.json.new.keep | shasum -)" ]; then 
     echo "new config did not apply correctly"
     exit 1
 fi

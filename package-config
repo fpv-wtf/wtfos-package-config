@@ -21,6 +21,7 @@ sub_help(){
 init_schema(){
     configfile=$configbase/$1/config.json
     schemafile=$configbase/$1/schema.json
+    newconfigfile="/tmp/package-config/$1/config.json.new"
 
     if [ ! -f $configfile ]; then
         echo "package $1 configuration not found"
@@ -59,8 +60,8 @@ sub_get(){
     fi
     init_schema $1
     key=$(echo -n "$2" | jq -R -s '.')
-    if [ -f $configfile.new ]; then
-        configfile=$configfile.new
+    if [ ! -z $UNAPPLIED ] && [ -f "$newconfigfile" ]; then
+        configfile="$newconfigfile"
     fi
     jq -r ".$key" $configfile
 }
@@ -163,11 +164,13 @@ sub_set(){
         value="$3"
     fi
 
-    if [ -f $configfile.new ]; then
-        jq ".$key = $value" $configfile.new > $configfile.tmp
-        mv $configfile.tmp $configfile.new
+    mkdir -p "/tmp/package-config/$1/"
+
+    if [ -f $newconfigfile ]; then
+        jq ".$key = $value" $newconfigfile > $configfile.tmp
+        mv $configfile.tmp $newconfigfile
     else
-        jq ".$key = $value" $configfile > $configfile.new
+        jq ".$key = $value" $configfile > $newconfigfile
     fi
 
 }
@@ -178,11 +181,11 @@ sub_reset() {
         exit 1
     fi
     init_schema "$1"
-    if [ ! -f $configfile.new ]; then
+    if [ ! -f $newconfigfile ]; then
         echo "no changes to reset"
         exit 1
     else 
-        rm -f $configfile.new
+        rm -f $newconfigfile
     fi
 }
 
@@ -193,13 +196,13 @@ sub_apply(){
     fi
     init_schema "$1"
 
-    if [ ! -f $configfile.new ]; then
+    if [ ! -f $newconfigfile ]; then
         echo "no changes to apply"
     fi
 
     #validate the new file for being paresable
-    if jq empty $configfile.new 2>/dev/null; then
-        mv $configfile.new $configfile
+    if jq empty $newconfigfile 2>/dev/null; then
+        mv $newconfigfile $configfile
     else
         echo "resulting config file is not valid json, please check your input"
         exit 1
