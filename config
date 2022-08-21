@@ -1,0 +1,209 @@
+#!/bin/sh
+
+myname=$(basename $0)
+configbase="${WTFOS_PACKAGE_CONFIG_BASE:-/opt/etc/pkg-settings/}"
+
+#set -x
+
+sub_help(){
+    echo "Usage: $myname <subcommand> [options]\n"
+    echo "Subcommands:"
+    echo "    get <package>                  show all keys for package"
+    echo "    get <package> <key>            get value for key in package"
+    echo "    set <package> <key> <value>    set string value for key in package"
+    echo "    apply <package>                restart the package dinit unit if it exists"
+    echo ""
+}
+
+init_schema(){
+    configfile=$configbase/$1/config.json
+    schemafile=$configbase/$1/schema.json
+
+    if [ ! -f $configfile ]; then
+        echo "package $1 configuration not found"
+        exit 1
+    fi
+
+    if [ ! -f $schemafile ]; then
+        echo "package $1 schema not found"
+        exit 1
+    fi
+
+    if [ "$#" -ne 1 ]; then
+        settingkey=$(echo -n "$2" | jq -R -s '.')
+        settingtype=$(jq -r ".settings.$settingkey.widget" $schemafile)
+         if [ -z "$settingtype" ] || [ "$settingtype" = "null" ]; then 
+            echo "invalid key for $1"
+            exit 1
+         fi
+    fi
+
+
+}
+  
+sub_get(){
+    if [ "$#" -lt 1 ]; then
+        echo "must specify config package"
+        exit 1
+    fi
+    init_schema $1
+    key=$(echo -n $2 | jq -R -s '.')
+    if [ -f $configfile.new ]; then
+        configfile=$configfile.new
+    fi
+    jq -r ".$key" $configfile
+}
+
+
+validate_checkbox(){
+    if [ $1 != "false" ] && [ $1 != "true" ]; then
+        echo "value must be 'true' or 'false'"
+        exit 1
+    fi
+    return 0
+}
+
+
+validate_range(){
+    if [ "$pattern" != "null" ]; then 
+        echo "$1" | grep -Eq  "^[0-9]*$" 
+        result=$?
+        if [ $result -ne 0 ]; then
+            echo "$settingkey must be an integer number"
+            exit 1
+        fi
+    fi
+    minValue=$(jq -r .settings.$settingkey.min $schemafile)
+    if [ "$minValue" != "null" ]; then 
+        if [ $1 -lt $minValue ]; then
+            echo "$settingkey must be at least $minValue"
+            exit 1
+        fi
+    fi
+
+    maxValue=$(jq -r .settings.$settingkey.max $schemafile)
+    if [ "$maxValue" != "null" ]; then 
+        if [ $1 -gt $maxValue ]; then
+            echo "$settingkey must be no more than $maxValue"
+            exit 1
+        fi
+    fi
+    
+    return 0
+}
+
+validate_select(){
+    safevalue=$(echo -n $1 | jq -R -s '.')
+    if [ $(jq "any(.settings.$settingkey.options[].key == $safevalue; .)" $schemafile) != "true" ]; then
+        echo "$1 is not a valid option for $settingkey"
+        exit 1
+    fi
+}
+
+
+validate_text(){
+    pattern=$(jq -r .settings.$settingkey.pattern $schemafile)
+    if [ "$pattern" != "null" ]; then 
+        echo "$1" | grep -Eq  "^$pattern$" 
+        result=$?
+        if [ $result -ne 0 ]; then
+            echo "$settingkey does not match $pattern"
+            exit 1
+        fi
+    fi
+    minLength=$(jq -r .settings.$settingkey.minLength $schemafile)
+    if [ "$minLength" != "null" ]; then 
+        if [ ${#1} -lt $minLength ]; then
+            echo "$settingkey must be at least $minLength characters"
+            exit 1
+        fi
+    fi
+
+    maxLength=$(jq -r .settings.$settingkey.maxLength $schemafile)
+    if [ "$maxLength" != "null" ]; then 
+        if [ ${#1} -gt $maxLength ]; then
+            echo "$settingkey must be no more than $maxLength characters"
+            exit 1
+        fi
+    fi
+    
+    return 0
+}
+
+
+sub_set(){
+    if [ "$#" -ne 3 ]; then
+        echo "must specify package, key and value"
+        exit 1
+    fi
+    init_schema "$1" "$2"
+
+    validate_${settingtype} "$3"
+    if [ $? = 127 ]; then
+        echo "Error: '$settingtype' is not a known setting type." >&2
+        exit 1
+    fi
+
+    key=$(echo -n $2 | jq -R -s '.')
+
+    if [ "$settingtype" = "text" ] || [ "$settingtype" = "select" ]; then
+        value=$(echo -n $3 | jq -R -s '.')
+    else 
+        value="$3"
+    fi
+
+    if [ -f $configfile.new ]; then
+        jq ".$key = $value" $configfile.new > $configfile.tmp
+        mv $configfile.tmp $configfile.new
+    else
+        jq ".$key = $value" $configfile > $configfile.new
+    fi
+
+}
+
+sub_reset() {
+    init_schema "$1"
+    if [ ! -f $configfile.new ]; then
+        echo "no changes to reset"
+        exit 1
+    else 
+        rm -f $configfile.new
+    fi
+}
+
+sub_apply(){
+    if [ "$#" -ne 1 ]; then
+        echo "must specify package"
+        exit 1
+    fi
+    init_schema "$1"
+
+    if [ ! -f $configfile.new ]; then
+        echo "no changes to apply"
+    fi
+
+    #validate the new file for being paresable
+    if jq empty $configfile.new 2>/dev/null; then
+        mv $configfile.new $configfile
+    else
+        echo "resulting config file is not valid json, please check your input"
+        exit 1
+    fi
+    dinitctl restart $1 || true
+}
+
+subcommand=$1
+case $subcommand in
+    "" | "-h" | "--help")
+        sub_help
+        ;;
+    *)
+        shift
+        sub_${subcommand} "$@"
+        if [ $? = 127 ]; then
+            echo "Error: '$subcommand' is not a known subcommand." >&2
+            echo "       Run '$myname help' for a list of known subcommands." >&2
+            exit 1
+        fi
+        ;;
+esac
