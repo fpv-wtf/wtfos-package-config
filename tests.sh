@@ -7,7 +7,8 @@ fi
 
 #use ./ as config store 
 export WTFOS_PACKAGE_CONFIG_BASE=./
-
+#shim dinitctl
+export DINITCTL_BINARY="echo"
 
 mkdir -p tmp
 cp testconfig.json tmp/config.json
@@ -174,8 +175,13 @@ fi
 #    exit 1
 #fi
 
-
 ./package-config apply tmp
+
+if [ "$(./package-config apply tmp | grep -E "restart service_[12]" | wc -l)" = "2" ]; then
+    echo "dinit units didn't get restart called"
+    exit 1
+fi
+
 if [ "$(cat tmp/config.json | shasum -)" != "$(cat /tmp/package-config/tmp/config.json.new.keep | shasum -)" ]; then 
     echo "new config did not apply correctly"
     exit 1

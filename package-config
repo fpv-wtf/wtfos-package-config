@@ -7,6 +7,12 @@ if [ ! -z $DEBUG ]; then
     set -x
 fi
 
+if [ ! -z DINIT_BINARY ]; then 
+    alias dinitctl=echo
+fi
+
+dinitbin="${DINITCTL_BINARY:-dinitctl}"
+
 set -e
 
 sub_help(){
@@ -216,7 +222,11 @@ sub_apply(){
         exit 1
     fi
     echo "changes applied"
-    dinitctl restart $1 || true
+    for unit in $(cat $schemafile | jq -r '.units[]'); do
+        echo  "restarting $unit"
+        $dinitbin restart $unit || true
+    done
+    
 }
 
 subcommand=$1
