@@ -10,7 +10,12 @@ fi
 if [ ! -z DINIT_BINARY ]; then 
     alias dinitctl=echo
 fi
-
+#detect entware jq, use it
+if [ -f /opt/bin/jq ]; then
+    jqbin=/opt/bin/jq
+else
+    jqbin=jq
+fi
 dinitbin="${DINITCTL_BINARY:-dinitctl}"
 
 set -e
@@ -51,8 +56,8 @@ init_schema(){
             exit 1
         fi
 
-        settingkey=$(echo -n "$2" | jq -R -s '.')
-        settingtype=$(jq -r ".settings.$settingkey.widget" $schemafile)
+        settingkey=$(echo -n "$2" | $jqbin -R -s '.')
+        settingtype=$($jqbin -r ".settings.$settingkey.widget" $schemafile)
          if [ -z "$settingtype" ] || [ "$settingtype" = "null" ]; then 
             echo "invalid key for $1"
             exit 1
@@ -73,7 +78,7 @@ sub_get(){
         exit 1
     fi
     init_schema $1
-    key=$(echo -n "$2" | jq -R -s '.')
+    key=$(echo -n "$2" | $jqbin -R -s '.')
     
 
     if [ -z $showsavedonly ] && [ -f "$newconfigfile" ]; then
@@ -82,11 +87,11 @@ sub_get(){
 
     if [ "$#" -eq 1 ]; then
         #dump all settings
-        jq -r 'to_entries|map("\(.key)=" + @sh "\(.value|tostring)")|.[]' $configfile
+        $jqbin -r 'to_entries|map("\(.key)=" + @sh "\(.value|tostring)")|.[]' $configfile
         
     else
         #get specific settings
-        jq -r ".$key" $configfile
+        $jqbin -r ".$key" $configfile
     fi
 }
 
@@ -109,7 +114,7 @@ validate_range(){
             exit 1
         fi
     fi
-    minValue=$(jq -r .settings.$settingkey.min $schemafile)
+    minValue=$($jqbin -r .settings.$settingkey.min $schemafile)
     if [ "$minValue" != "null" ]; then 
         if [ $1 -lt $minValue ]; then
             echo "$settingkey must be at least $minValue"
@@ -117,7 +122,7 @@ validate_range(){
         fi
     fi
 
-    maxValue=$(jq -r .settings.$settingkey.max $schemafile)
+    maxValue=$($jqbin -r .settings.$settingkey.max $schemafile)
     if [ "$maxValue" != "null" ]; then 
         if [ $1 -gt $maxValue ]; then
             echo "$settingkey must be no more than $maxValue"
@@ -129,8 +134,8 @@ validate_range(){
 }
 
 validate_select(){
-    safevalue=$(echo -n $1 | jq -R -s '.')
-    if [ $(jq "any(.settings.$settingkey.options[].key == $safevalue; .)" $schemafile) != "true" ]; then
+    safevalue=$(echo -n $1 | $jqbin -R -s '.')
+    if [ $($jqbin "any(.settings.$settingkey.options[].key == $safevalue; .)" $schemafile) != "true" ]; then
         echo "$1 is not a valid option for $settingkey"
         exit 1
     fi
@@ -138,7 +143,7 @@ validate_select(){
 
 
 validate_text(){
-    pattern=$(jq -r .settings.$settingkey.pattern $schemafile)
+    pattern=$($jqbin -r .settings.$settingkey.pattern $schemafile)
     if [ "$pattern" != "null" ]; then 
         echo "$1" | grep -Eq  "^$pattern$" 
         result=$?
@@ -147,7 +152,7 @@ validate_text(){
             exit 1
         fi
     fi
-    minLength=$(jq -r .settings.$settingkey.minLength $schemafile)
+    minLength=$($jqbin -r .settings.$settingkey.minLength $schemafile)
     if [ "$minLength" != "null" ]; then 
         if [ ${#1} -lt $minLength ]; then
             echo "$settingkey must be at least $minLength characters"
@@ -155,7 +160,7 @@ validate_text(){
         fi
     fi
 
-    maxLength=$(jq -r .settings.$settingkey.maxLength $schemafile)
+    maxLength=$($jqbin -r .settings.$settingkey.maxLength $schemafile)
     if [ "$maxLength" != "null" ]; then 
         if [ ${#1} -gt $maxLength ]; then
             echo "$settingkey must be no more than $maxLength characters"
@@ -180,21 +185,22 @@ sub_set(){
         exit 1
     fi
 
-    key=$(echo -n "$2" | jq -R -s '.')
+    key=$(echo -n "$2" | $jqbin -R -s '.')
 
     if [ "$settingtype" = "text" ] || [ "$settingtype" = "select" ]; then
-        value=$(echo -n $3 | jq -R -s '.')
+        value=$(echo -n $3 | $jqbin -R -s '.')
     else 
         value="$3"
     fi
 
+    mkdir -p "/tmp/package-config/"
     mkdir -p "/tmp/package-config/$1/"
 
     if [ -f $newconfigfile ]; then
-        jq ".$key = $value" $newconfigfile > $configfile.tmp
+        $jqbin ".$key = $value" $newconfigfile > $configfile.tmp
         mv $configfile.tmp $newconfigfile
     else
-        jq ".$key = $value" $configfile > $newconfigfile
+        $jqbin ".$key = $value" $configfile > $newconfigfile
     fi
 
 }
@@ -225,14 +231,14 @@ sub_apply(){
     fi
 
     #validate the new file for being paresable
-    if jq empty $newconfigfile 2>/dev/null; then
+    if $jqbin empty $newconfigfile 2>/dev/null; then
         mv $newconfigfile $configfile
     else
         echo "resulting config file is not valid json, please check your input"
         exit 1
     fi
     echo "changes applied"
-    for unit in $(cat $schemafile | jq -r '.units[]'); do
+    for unit in $(cat $schemafile | $jqbin -r '.units[]'); do
         echo  "restarting $unit"
         $dinitbin restart $unit || true
     done

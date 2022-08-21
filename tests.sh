@@ -189,7 +189,7 @@ if [ "$(./package-config apply tmp | grep -E "restart service_[12]" | wc -l)" = 
     exit 1
 fi
 
-if [ "$(cat tmp/config.json | shasum -)" != "$(cat /tmp/package-config/tmp/config.json.new.keep | shasum -)" ]; then 
+if [ "$(cat tmp/config.json | md5sum -)" != "$(cat /tmp/package-config/tmp/config.json.new.keep | md5sum -)" ]; then 
     echo "new config did not apply correctly"
     exit 1
 fi
