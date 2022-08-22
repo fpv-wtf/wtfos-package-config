@@ -14,7 +14,7 @@ Subcommands:
     apply <package>                restart the package dinit unit if it exists    
 ```
 
-### Show a current setting value./package-config get
+### Show a current setting value
 ```
 package-config get msp-osd debug
 ```
@@ -50,7 +50,7 @@ SOME_SETTING=$(package-config getsaved $PACKAGE_NAME $SETTING_NAME)
 ``` 
 To load all settings in your config file into local variables you can use:
 ```
-eval $(./package-config getsaved $PACKAGE_NAME)
+eval $(package-config getsaved $PACKAGE_NAME)
 ```
 
 ## Development and testing
