@@ -9,9 +9,10 @@ Usage: package-config <subcommand> [options]
 Subcommands:
     get <package>                  show all keys for package
     get <package> <key>            get value for key in package
+    getsaved <package> <key>       get on disk (non-pending) value
     set <package> <key> <value>    set value for key in package
     reset <package>                forget unapplied changes
-    apply <package>                restart the package dinit unit if it exists    
+    apply <package>                apply changes and restart package units
 ```
 
 ### Show a current setting value

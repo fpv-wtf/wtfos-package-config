@@ -28,7 +28,7 @@ sub_help(){
     echo "    getsaved <package> <key>       get on disk (non-pending) value"
     echo "    set <package> <key> <value>    set value for key in package"
     echo "    reset <package>                forget unapplied changes"
-    echo "    apply <package>                restart the package dinit unit if it exists"
+    echo "    apply <package>                apply changes and restart package units"
     echo ""
 }
 
