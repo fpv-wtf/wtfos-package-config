@@ -53,11 +53,16 @@ To load an individual settings from your config file you can use:
 ```
 SOME_SETTING=$(package-config getsaved $PACKAGE_NAME $SETTING_NAME)
 ``` 
+Note: this returns "null" if the key is missing.
+
 To load all settings in your config file into local variables you can use:
 ```
 eval $(package-config getsaved $PACKAGE_NAME | sed -e :1 -e 's/^\([^=]*\)\-/\1_/;t1')
 ```
+Note: missing keys are not populated
+
 The sed is necessary in case you want to use the '-' character in your key names. The '-' will be replaced with a '_' for bash variable names.
+
 
 ## Development and testing
 
