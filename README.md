@@ -40,6 +40,8 @@ Your package should depend on `wtfos-package-config`.
 
 Install your [schema.json](./testschema.json) and default [config.json](./testconfig.json) into `/opt/etc/package-config/$PACKAGE_NAME/`.
 
+Don't forget to add a [conffiles](./conffiles) to your packages control directory to make sure opkg updates do not overwrite the users existing settings. This also means your package must be able to deal with missing keys that were added in updates, usually by defaulting to a sane value in code.
+
 Check out the linked files above for examples, supported types and constraints. In order for a field to be settable it *must* be defined with a certain type in your schema.json. All constaints are optional and will be ignored if not persent.
 
 Please make sure to test your schema.json to work as expected. If you get any parse errors during the set subcommand, fix them. Only standard JSON is supported, no traling commas for arrays for example.
