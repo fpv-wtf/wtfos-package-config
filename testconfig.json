@@ -2,5 +2,6 @@
   "key_checkbox": true,
   "key_select": "key_2",
   "key_range": 4,
-  "key_text": "i am some text"
+  "key_text": "i am some text",
+  "key-dash-text": "i am some text"
 }

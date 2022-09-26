@@ -42,6 +42,8 @@ Install your [schema.json](./testschema.json) and default [config.json](./testco
 
 Check out the linked files above for examples, supported types and constraints. In order for a field to be settable it *must* be defined with a certain type in your schema.json. All constaints are optional and will be ignored if not persent.
 
+Please make sure to test your schema.json to work as expected. If you get any parse errors during the set subcommand, fix them. Only standard JSON is supported, no traling commas for arrays for example.
+
 For more details see [this wtfos-configurator issue](https://github.com/fpv-wtf/wtfos-configurator/issues/7).
 
 ### Bash script authors
@@ -51,8 +53,9 @@ SOME_SETTING=$(package-config getsaved $PACKAGE_NAME $SETTING_NAME)
 ``` 
 To load all settings in your config file into local variables you can use:
 ```
-eval $(package-config getsaved $PACKAGE_NAME)
+eval $(package-config getsaved $PACKAGE_NAME | sed -e :1 -e 's/^\([^=]*\)\-/\1_/;t1')
 ```
+The sed is necessary in case you want to use the '-' character in your key names. The '-' will be replaced with a '_' for bash variable names.
 
 ## Development and testing
 

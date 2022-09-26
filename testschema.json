@@ -31,6 +31,13 @@
       "pattern": "[a-zA-Z ]*",
       "minLength": 2,
       "maxLength": 10
+    },
+    "key-dash-text": {
+      "name": "I am text",
+      "widget": "text",
+      "pattern": "[a-zA-Z ]*",
+      "minLength": 2,
+      "maxLength": 10
     }
   },
   "units": [

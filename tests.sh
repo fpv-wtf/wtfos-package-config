@@ -34,6 +34,23 @@ if [[ $(./package-config get tmp key_text ) != "$teststring" ]]; then
     exit 1 
 fi
 
+
+if [[ $(./package-config get tmp key-dash-text ) != "i am some text" ]]; then
+    echo "unexpected key text"
+    exit 1 
+fi
+
+teststring="me string"
+
+echo "#checking text value update"
+
+./package-config set tmp key-dash-text "$teststring"
+
+if [[ $(./package-config get tmp key-dash-text ) != "$teststring" ]]; then
+    echo "unexpected key text"
+    exit 1 
+fi
+
 ## doesn't work in init_schema and fuck spaces in keys
 #./package-config set tmp "hello i am spaces" "$teststring"
 
@@ -176,7 +193,7 @@ fi
 #fi
 
 echo "checking bash variable loading"
-eval $(./package-config get tmp)
+eval $(./package-config get tmp | sed -e :1 -e 's/^\([^=]*\)\-/\1_/;t1')
 if [[ "$key_text" != "me string" ]] || [[ "$key_checkbox" != "false" ]] || [[ "$key_range" != "3" ]]  || [[ "$key_select" != "key_2" ]]; then
     echo "could not validate bash variable loading"
     exit 1

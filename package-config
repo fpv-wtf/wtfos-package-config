@@ -49,7 +49,7 @@ init_schema(){
 
     if [ "$#" -ne 1 ]; then
         ##lets keep things sane
-        echo "$2" | grep -Eq  "^[a-zA-Z0-9\\_]*$" 
+        echo "$2" | grep -Eq  "^[a-zA-Z0-9\\_\\-]*$" 
         result=$?
         if [ $result -ne 0 ]; then
             echo "key may only contain alphanumeric characters and _"
@@ -58,6 +58,11 @@ init_schema(){
 
         settingkey=$(echo -n "$2" | $jqbin -R -s '.')
         settingtype=$($jqbin -r ".settings.$settingkey.widget" $schemafile)
+        result=$?
+        if [ $result -ne 0 ]; then
+            echo "could not parse schema.json, see errors above"
+            exit 1
+        fi
          if [ -z "$settingtype" ] || [ "$settingtype" = "null" ]; then 
             echo "invalid key for $1"
             exit 1
