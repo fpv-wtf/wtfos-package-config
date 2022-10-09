@@ -3,4 +3,6 @@ Version: 0.1.1
 Maintainer: Joonas Trussmann <joonas@batman.ee>
 Description: package-config CLI tool for interacting with package configurations
 Architecture: pigeon-all
+Homepage: https://github.com/fpv-wtf/wtfos-package-config
+Section: system
 Depends: jq
